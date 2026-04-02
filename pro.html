@@ -1,0 +1,657 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>aiDoctor PRO — полный разбор</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0f172a;
+    color: #f1f5f9;
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 20px 40px;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 560px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .logo { margin-bottom: 8px; }
+  .logo-text {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 800;
+    font-size: 1.6rem;
+    color: #f1f5f9;
+  }
+  .logo-text span { color: #60a5fa; }
+
+  .pro-badge {
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
+    color: white;
+    padding: 4px 14px;
+    border-radius: 100px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    margin-bottom: 24px;
+  }
+
+  h1 {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: clamp(1.8rem, 6vw, 2.4rem);
+    font-weight: 900;
+    line-height: 1.1;
+    margin-bottom: 8px;
+    text-align: center;
+    color: #f1f5f9;
+  }
+
+  .subtitle {
+    text-align: center;
+    color: #94a3b8;
+    font-size: 0.9rem;
+    margin-bottom: 28px;
+  }
+
+  /* TIMER */
+  .timer-bar {
+    width: 100%;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 14px;
+    padding: 12px 18px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.85rem;
+  }
+  .timer-label { color: #94a3b8; }
+  .timer-value { color: #60a5fa; font-weight: 700; font-family: monospace; font-size: 1rem; }
+  .analyses-left { color: #10b981; font-weight: 600; }
+
+  /* PERSON BLOCK */
+  .person-block {
+    width: 100%;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  .person-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .person-title {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 800;
+    font-size: 1rem;
+    color: #f1f5f9;
+  }
+  .btn-remove-person {
+    background: none;
+    border: none;
+    color: #ef4444;
+    cursor: pointer;
+    font-size: 0.8rem;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: background 0.2s;
+  }
+  .btn-remove-person:hover { background: #1e293b; }
+
+  .person-fields {
+    display: grid;
+    grid-template-columns: 1fr 80px 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .field-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 4px;
+  }
+  .field-input {
+    width: 100%;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.88rem;
+    color: #f1f5f9;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .field-input:focus { border-color: #60a5fa; }
+  .field-input::placeholder { color: #475569; }
+
+  .field-select {
+    width: 100%;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.88rem;
+    color: #f1f5f9;
+    outline: none;
+    cursor: pointer;
+  }
+
+  /* FILE UPLOAD */
+  .files-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 8px;
+  }
+  .file-drop {
+    width: 100%;
+    background: #0f172a;
+    border: 2px dashed #334155;
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    margin-bottom: 10px;
+  }
+  .file-drop:hover { border-color: #60a5fa; }
+  .file-drop-text { font-size: 0.82rem; color: #475569; }
+  .file-input { display: none; }
+
+  .files-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+  .file-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #0f172a;
+    border: 1px solid #1e3a5f;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 0.82rem;
+    color: #60a5fa;
+  }
+  .file-item-remove {
+    background: none;
+    border: none;
+    color: #ef4444;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0 4px;
+  }
+
+  .symptoms-textarea {
+    width: 100%;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.88rem;
+    color: #f1f5f9;
+    resize: none;
+    outline: none;
+    transition: border-color 0.2s;
+    margin-top: 10px;
+  }
+  .symptoms-textarea:focus { border-color: #60a5fa; }
+  .symptoms-textarea::placeholder { color: #475569; }
+
+  /* ADD PERSON */
+  .btn-add-person {
+    width: 100%;
+    background: transparent;
+    border: 2px dashed #334155;
+    border-radius: 14px;
+    padding: 14px;
+    color: #60a5fa;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    margin-bottom: 20px;
+  }
+  .btn-add-person:hover { border-color: #60a5fa; background: #1e293b; }
+
+  /* ANALYZE BUTTON */
+  .btn-analyze {
+    width: 100%;
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    color: white;
+    border: none;
+    padding: 18px 24px;
+    border-radius: 16px;
+    font-size: 1rem;
+    font-weight: 700;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 8px 32px rgba(37,99,235,0.4);
+    margin-bottom: 24px;
+  }
+  .btn-analyze:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 48px rgba(37,99,235,0.5);
+  }
+  .btn-analyze:disabled {
+    background: #334155;
+    transform: none;
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+
+  /* LOADING */
+  .loading {
+    display: none;
+    text-align: center;
+    padding: 20px;
+    color: #60a5fa;
+    font-weight: 600;
+  }
+  @keyframes dots {
+    0% { content: '.'; }
+    33% { content: '..'; }
+    66% { content: '...'; }
+  }
+  .loading-dots::after { content: '.'; animation: dots 1.5s infinite; }
+
+  /* RESULTS */
+  .result-block {
+    width: 100%;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+    font-size: 0.92rem;
+    line-height: 1.8;
+    color: #e2e8f0;
+    white-space: pre-wrap;
+  }
+  .result-name {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 800;
+    font-size: 1rem;
+    color: #60a5fa;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #334155;
+  }
+
+  /* ERROR */
+  .error-box {
+    display: none;
+    width: 100%;
+    background: #2d1515;
+    border: 1px solid #ef4444;
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    font-size: 0.88rem;
+    color: #fca5a5;
+    text-align: center;
+  }
+
+  /* ACCESS DENIED */
+  .access-denied {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .access-denied-emoji { font-size: 3rem; margin-bottom: 16px; display: block; }
+  .access-denied-title {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 900;
+    font-size: 1.5rem;
+    margin-bottom: 8px;
+  }
+  .access-denied-text { color: #94a3b8; margin-bottom: 24px; }
+  .btn-go-home {
+    background: #2563eb;
+    color: white;
+    border: none;
+    padding: 14px 28px;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .legal {
+    text-align: center;
+    font-size: 0.7rem;
+    color: #334155;
+    line-height: 1.9;
+    margin-top: 8px;
+  }
+  .legal a { color: #334155; text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="card">
+
+  <!-- ACCESS DENIED STATE -->
+  <div class="access-denied" id="accessDenied">
+    <span class="access-denied-emoji">🔒</span>
+    <div class="access-denied-title">Доступ истёк</div>
+    <div class="access-denied-text">Время доступа вышло или ссылка недействительна.<br>Вернись и оплати снова.</div>
+    <a href="/" class="btn-go-home">← Вернуться на главную</a>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div id="mainContent" style="display:none; width:100%; display:none">
+
+    <div class="logo">
+      <div class="logo-text">ai<span>Doctor</span></div>
+    </div>
+    <div class="pro-badge">PRO ДОСТУП</div>
+
+    <h1>Полный разбор анализов</h1>
+    <p class="subtitle">Загружай несколько файлов, добавляй людей — разберу каждого отдельно</p>
+
+    <div class="timer-bar">
+      <span class="timer-label">⏱ Доступ активен ещё:</span>
+      <span class="timer-value" id="timerValue">--:--:--</span>
+      <span class="analyses-left" id="analysesLeft">● активен</span>
+    </div>
+
+    <div id="personsContainer"></div>
+
+    <button class="btn-add-person" onclick="addPerson()">
+      + Добавить ещё одного человека
+    </button>
+
+    <button class="btn-analyze" id="analyzeBtn" onclick="analyzeAll()">
+      🔬 Разобрать все анализы
+    </button>
+
+    <div class="loading" id="loading">
+      <span class="loading-dots">Анализирую</span>
+    </div>
+
+    <div class="error-box" id="errorBox"></div>
+
+    <div id="resultsContainer"></div>
+
+    <div class="legal">
+      ⚠️ Не заменяет консультацию врача &nbsp;·&nbsp;
+      <a href="/">Главная</a>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+  const PRO_SYSTEM_PROMPT = `Твоя роль: Ты — Aidoctor, высококвалифицированный врач-диагност (д.м.н.) с огромным клиническим опытом. Говоришь просто, тепло и уверенно — как хороший семейный доктор. Обращаешься на «ты». Никогда не ставишь окончательный диагноз и не назначаешь лечение.
+
+ЯЗЫК ОТВЕТА:
+Объясняй как соседке за чашкой чая. Медицинский термин — оставляй, но сразу расшифровывай простыми словами через тире.
+
+АНАЛИЗ ДАННЫХ:
+— Если загружено несколько файлов одного человека — свяжи их в единую картину
+— Если есть файлы за разные даты — найди динамику: что улучшилось, что ухудшилось
+— Если ОАК и биохимия вместе — покажи как показатели связаны между собой
+— Если есть жалобы — ищи в анализах их причину и объясни связь
+
+СТРУКТУРА ОТВЕТА:
+
+1. СВЕТОФОР (одна строка):
+🟢 Всё спокойно / 🟡 Есть на что обратить внимание / 🔴 Нужна консультация — не откладывай
+
+2. ОБЩАЯ КАРТИНА:
+3-4 абзаца. Живой текст. Что происходит в организме и как это ощущается в жизни.
+Если несколько файлов — обязательно динамика: «По сравнению с прошлым разом...»
+Если разные типы анализов — покажи как они связаны.
+
+3. ВОЗМОЖНЫЕ ПРИЧИНЫ:
+2-3 причины каждого отклонения. Бытовым языком.
+
+4. ПЛАН ДЕЙСТВИЙ:
+— К кому идти и срочность
+— Что врач скорее всего назначит дополнительно
+— 4-5 вопросов которые стоит задать врачу на приёме
+
+5. ФИНАЛ (забота):
+«Я разобрал всё что ты загрузил. [Главный вывод в 1-2 предложениях].
+Если появятся новые анализы или что-то изменится — возвращайся. Динамика иногда говорит больше чем любой отдельный результат.
+Береги себя 🩺»
+
+ВАЖНО:
+— Никаких таблиц
+— Ответ не длиннее 4000 символов
+— В самый конец: «Aidoctor — ИИ-ассистент. Не заменяет врача.»`;
+
+  let personCount = 0;
+  let paidUntil = 0;
+
+  // Проверяем доступ
+  function checkAccess() {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+
+    if (token) {
+      // Есть токен в URL — сохраняем и проверяем
+      const stored = localStorage.getItem('pro_token_' + token);
+      if (stored) {
+        paidUntil = parseInt(stored);
+      } else {
+        // Новый токен — даём 24 часа (в реальности проверять на сервере)
+        paidUntil = Date.now() + 24 * 60 * 60 * 1000;
+        localStorage.setItem('pro_token_' + token, paidUntil);
+      }
+    } else {
+      // Нет токена — проверяем localStorage
+      paidUntil = parseInt(localStorage.getItem('paidUntil') || '0');
+    }
+
+    if (paidUntil > Date.now()) {
+      document.getElementById('accessDenied').style.display = 'none';
+      document.getElementById('mainContent').style.display = 'flex';
+      document.getElementById('mainContent').style.flexDirection = 'column';
+      document.getElementById('mainContent').style.alignItems = 'center';
+      startTimer();
+      addPerson(); // Добавляем первого человека
+    } else {
+      document.getElementById('accessDenied').style.display = 'block';
+      document.getElementById('mainContent').style.display = 'none';
+    }
+  }
+
+  function startTimer() {
+    function update() {
+      const left = paidUntil - Date.now();
+      if (left <= 0) {
+        document.getElementById('timerValue').textContent = '00:00:00';
+        document.getElementById('accessDenied').style.display = 'block';
+        document.getElementById('mainContent').style.display = 'none';
+        return;
+      }
+      const h = Math.floor(left / 3600000);
+      const m = Math.floor((left % 3600000) / 60000);
+      const s = Math.floor((left % 60000) / 1000);
+      document.getElementById('timerValue').textContent =
+        String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+    }
+    update();
+    setInterval(update, 1000);
+  }
+
+  function addPerson() {
+    personCount++;
+    const id = personCount;
+    const container = document.getElementById('personsContainer');
+
+    const block = document.createElement('div');
+    block.className = 'person-block';
+    block.id = 'person_' + id;
+    block.innerHTML = `
+      <div class="person-header">
+        <div class="person-title">👤 Человек ${id}</div>
+        ${id > 1 ? `<button class="btn-remove-person" onclick="removePerson(${id})">✕ Удалить</button>` : ''}
+      </div>
+      <div class="person-fields">
+        <div>
+          <label class="field-label">Имя</label>
+          <input class="field-input" id="name_${id}" placeholder="Например: Мама" />
+        </div>
+        <div>
+          <label class="field-label">Возраст</label>
+          <input class="field-input" id="age_${id}" placeholder="42" type="number" />
+        </div>
+        <div>
+          <label class="field-label">Пол</label>
+          <select class="field-select" id="gender_${id}">
+            <option value="">—</option>
+            <option value="женский">Женский</option>
+            <option value="мужской">Мужской</option>
+          </select>
+        </div>
+      </div>
+      <label class="files-label">Анализы (фото или PDF, можно несколько)</label>
+      <label class="file-drop" for="files_${id}">
+        <div class="file-drop-text">📎 Нажми или перетащи файлы сюда</div>
+      </label>
+      <input class="file-input" type="file" id="files_${id}" accept="image/*,.pdf" multiple onchange="addFiles(${id})">
+      <div class="files-list" id="filesList_${id}"></div>
+      <label class="field-label" style="margin-top:10px">Жалобы (необязательно)</label>
+      <textarea class="symptoms-textarea" id="symptoms_${id}" rows="2" placeholder="Устаёт, голова кружится, давление скачет..."></textarea>
+    `;
+    container.appendChild(block);
+  }
+
+  function removePerson(id) {
+    document.getElementById('person_' + id).remove();
+  }
+
+  // Храним файлы отдельно
+  const personFiles = {};
+
+  function addFiles(personId) {
+    const input = document.getElementById('files_' + personId);
+    if (!personFiles[personId]) personFiles[personId] = [];
+
+    Array.from(input.files).forEach(file => {
+      personFiles[personId].push(file);
+    });
+
+    renderFilesList(personId);
+    input.value = '';
+  }
+
+  function removeFile(personId, index) {
+    personFiles[personId].splice(index, 1);
+    renderFilesList(personId);
+  }
+
+  function renderFilesList(personId) {
+    const list = document.getElementById('filesList_' + personId);
+    const files = personFiles[personId] || [];
+    list.innerHTML = files.map((f, i) => `
+      <div class="file-item">
+        <span>📄 ${f.name}</span>
+        <button class="file-item-remove" onclick="removeFile(${personId}, ${i})">✕</button>
+      </div>
+    `).join('');
+  }
+
+  async function analyzeAll() {
+    const persons = document.querySelectorAll('.person-block');
+    if (persons.length === 0) { showError('Добавь хотя бы одного человека'); return; }
+
+    const btn = document.getElementById('analyzeBtn');
+    const loading = document.getElementById('loading');
+    const resultsContainer = document.getElementById('resultsContainer');
+    const errorBox = document.getElementById('errorBox');
+
+    btn.disabled = true;
+    loading.style.display = 'block';
+    resultsContainer.innerHTML = '';
+    errorBox.style.display = 'none';
+
+    try {
+      for (const person of persons) {
+        const id = person.id.replace('person_', '');
+        const name = document.getElementById('name_' + id)?.value || 'Без имени';
+        const age = document.getElementById('age_' + id)?.value || '';
+        const gender = document.getElementById('gender_' + id)?.value || '';
+        const symptoms = document.getElementById('symptoms_' + id)?.value || '';
+        const files = personFiles[id] || [];
+
+        if (files.length === 0) continue;
+
+        // Конвертируем файлы
+        const filesData = await Promise.all(files.map(async f => ({
+          data: await toBase64(f),
+          mediaType: f.type || 'image/jpeg',
+          name: f.name
+        })));
+
+        const response = await fetch('/.netlify/functions/analyze-pro', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, age, gender, symptoms, files: filesData }),
+        });
+
+        const data = await response.json();
+
+        if (data.result) {
+          const block = document.createElement('div');
+          block.className = 'result-block';
+          block.innerHTML = `<div class="result-name">🩺 ${name}${age ? ', ' + age + ' лет' : ''}${gender ? ', ' + gender : ''}</div>` +
+            `<div style="white-space:pre-wrap">${data.result}</div>`;
+          resultsContainer.appendChild(block);
+        }
+      }
+    } catch (err) {
+      showError('Что-то пошло не так. Попробуй ещё раз.');
+    } finally {
+      loading.style.display = 'none';
+      btn.disabled = false;
+    }
+  }
+
+  function toBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function showError(msg) {
+    const errorBox = document.getElementById('errorBox');
+    errorBox.style.display = 'block';
+    errorBox.textContent = msg;
+  }
+
+  // Запускаем проверку доступа
+  checkAccess();
+</script>
+</body>
+</html>
