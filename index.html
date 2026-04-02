@@ -1,0 +1,408 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>aiDoctor — расшифровка анализов за минуту</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #ffffff;
+    color: #0f172a;
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 20px 40px;
+    overflow-x: hidden;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 520px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .logo { margin-bottom: 12px; }
+  .logo-text {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 800;
+    font-size: 1.6rem;
+    color: #0f172a;
+  }
+  .logo-text span { color: #2563eb; }
+
+  .doctors-bar {
+    width: 100%;
+    background: #2563eb;
+    color: white;
+    text-align: center;
+    padding: 10px 20px;
+    border-radius: 12px;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 800;
+    font-size: 1.1rem;
+    margin-bottom: 28px;
+  }
+
+  h1 {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: clamp(2.2rem, 8vw, 3.2rem);
+    font-weight: 900;
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+    margin-bottom: 20px;
+    text-align: center;
+    color: #0f172a;
+  }
+  h1 .accent { color: #2563eb; }
+
+  .subtitle {
+    text-align: center;
+    color: #334155;
+    font-size: 1rem;
+    line-height: 1.9;
+    margin-bottom: 8px;
+    max-width: 420px;
+  }
+  .subtitle .last-line {
+    color: #0f172a;
+    font-weight: 700;
+    display: block;
+    margin-top: 6px;
+  }
+
+  .features {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 20px 0;
+  }
+  .feat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 7px 14px;
+    border-radius: 100px;
+    font-size: 0.78rem;
+    color: #475569;
+    white-space: nowrap;
+  }
+
+  /* UPLOAD FORM */
+  .upload-section {
+    width: 100%;
+    background: #f8fafc;
+    border: 2px dashed #bfdbfe;
+    border-radius: 20px;
+    padding: 28px 24px;
+    margin-bottom: 16px;
+    transition: border-color 0.2s;
+  }
+  .upload-section:hover { border-color: #2563eb; }
+
+  .upload-label {
+    display: block;
+    text-align: center;
+    cursor: pointer;
+    margin-bottom: 16px;
+  }
+  .upload-icon { font-size: 2.5rem; margin-bottom: 8px; display: block; }
+  .upload-title {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: #0f172a;
+    margin-bottom: 4px;
+  }
+  .upload-hint { font-size: 0.8rem; color: #94a3b8; }
+
+  #fileInput { display: none; }
+
+  .file-selected {
+    display: none;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    color: #1d4ed8;
+    margin-bottom: 12px;
+    text-align: center;
+  }
+
+  .symptoms-label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 6px;
+  }
+  .symptoms-input {
+    width: 100%;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.88rem;
+    color: #0f172a;
+    resize: none;
+    outline: none;
+    transition: border-color 0.2s;
+    margin-bottom: 16px;
+    background: white;
+  }
+  .symptoms-input:focus { border-color: #2563eb; }
+
+  .btn-analyze {
+    width: 100%;
+    background: #2563eb;
+    color: white;
+    border: none;
+    padding: 18px 24px;
+    border-radius: 16px;
+    font-size: 1rem;
+    font-weight: 700;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 8px 32px rgba(37,99,235,0.3);
+  }
+  .btn-analyze:hover {
+    background: #1d4ed8;
+    transform: translateY(-2px);
+    box-shadow: 0 16px 48px rgba(37,99,235,0.4);
+  }
+  .btn-analyze:disabled {
+    background: #94a3b8;
+    transform: none;
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+
+  /* RESULT */
+  .result-box {
+    display: none;
+    width: 100%;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 20px;
+    font-size: 0.92rem;
+    line-height: 1.8;
+    color: #0f172a;
+    white-space: pre-wrap;
+  }
+
+  .error-box {
+    display: none;
+    width: 100%;
+    background: #fff1f2;
+    border: 1px solid #fecdd3;
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    font-size: 0.88rem;
+    color: #be123c;
+    text-align: center;
+  }
+
+  .loading {
+    display: none;
+    text-align: center;
+    padding: 20px;
+    color: #2563eb;
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+  .loading-dots::after {
+    content: '';
+    animation: dots 1.5s infinite;
+  }
+  @keyframes dots {
+    0% { content: '.'; }
+    33% { content: '..'; }
+    66% { content: '...'; }
+  }
+
+  /* TRUST */
+  .trust {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding-top: 20px;
+    border-top: 1px solid #e2e8f0;
+    margin-bottom: 20px;
+    width: 100%;
+  }
+  .trust-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.77rem;
+    color: #94a3b8;
+  }
+  .ti { color: #10b981; font-weight: 700; }
+
+  .legal {
+    text-align: center;
+    font-size: 0.7rem;
+    color: #cbd5e1;
+    line-height: 1.9;
+  }
+  .legal a { color: #cbd5e1; text-decoration: none; }
+  .legal a:hover { color: #94a3b8; }
+</style>
+</head>
+<body>
+<div class="card">
+
+  <div class="logo">
+    <div class="logo-text">ai<span>Doctor</span></div>
+  </div>
+
+  <div class="doctors-bar">Сделано врачами</div>
+
+  <h1>Анализы пришли.<br><span class="accent">Что это значит?</span></h1>
+
+  <p class="subtitle">
+    Врач принял за 7 минут и ничего не объяснил?<br>
+    Google выдал от простуды до онкологии?<br>
+    А вопрос так и остался...<br>
+    <span class="last-line">aiDoctor объяснит честно — за ~1 минуту.</span>
+  </p>
+
+  <div class="features">
+    <div class="feat">⚡ Ответ за ~1 минуту</div>
+    <div class="feat">🔒 Данные не хранятся</div>
+    <div class="feat">🇰🇿 Любая лаборатория Казахстана</div>
+  </div>
+
+  <!-- UPLOAD FORM -->
+  <div class="upload-section" id="uploadSection">
+    <label class="upload-label" for="fileInput">
+      <span class="upload-icon">📎</span>
+      <div class="upload-title">Загрузи анализ</div>
+      <div class="upload-hint">Фото или PDF — нажми или перетащи сюда</div>
+    </label>
+    <input type="file" id="fileInput" accept="image/*,.pdf">
+    <div class="file-selected" id="fileSelected"></div>
+
+    <label class="symptoms-label" for="symptoms">Есть жалобы? Напиши коротко (необязательно)</label>
+    <textarea class="symptoms-input" id="symptoms" rows="2" placeholder="Например: устаю, голова кружится, давление скачет..."></textarea>
+
+    <button class="btn-analyze" id="analyzeBtn" onclick="analyzeFile()">
+      🆓 Расшифровать первый анализ бесплатно
+    </button>
+  </div>
+
+  <div class="loading" id="loading">
+    <span class="loading-dots">Анализирую</span>
+  </div>
+
+  <div class="error-box" id="errorBox"></div>
+
+  <div class="result-box" id="resultBox"></div>
+
+  <div class="trust">
+    <div class="trust-item"><span class="ti">✓</span> Уже помогли 2 400+ в Казахстане</div>
+    <div class="trust-item"><span class="ti">✓</span> Без записи и очередей</div>
+    <div class="trust-item"><span class="ti">✓</span> Любая лаборатория</div>
+  </div>
+
+  <div class="legal">
+    ⚠️ Не заменяет консультацию врача<br>
+    <a href="https://docs.google.com/document/d/1rYlkkBQAixizFWOqBXLV2jx2j5mQpEX45Rj9S8_GMwQ/edit" target="_blank">Политика конфиденциальности</a>
+    &nbsp;·&nbsp;
+    <a href="https://docs.google.com/document/d/1L_eCy3_Ru0eXnJ59WvyWVTLIqNiz1JFLhXjDNUHXie0/edit" target="_blank">Договор оферты</a>
+    &nbsp;·&nbsp;
+    <a href="https://docs.google.com/document/d/1zMMpx1uuIMw5Lbdhlgces7CgkfyIwDTdDrs1KsCp9Lw/edit" target="_blank">О поставщике</a>
+  </div>
+
+</div>
+
+<script>
+  const fileInput = document.getElementById('fileInput');
+  const fileSelected = document.getElementById('fileSelected');
+
+  fileInput.addEventListener('change', function() {
+    if (this.files[0]) {
+      fileSelected.style.display = 'block';
+      fileSelected.textContent = '📄 ' + this.files[0].name;
+    }
+  });
+
+  async function analyzeFile() {
+    const file = fileInput.files[0];
+    if (!file) {
+      showError('Сначала загрузи файл с анализом');
+      return;
+    }
+
+    const symptoms = document.getElementById('symptoms').value.trim();
+    const btn = document.getElementById('analyzeBtn');
+    const loading = document.getElementById('loading');
+    const resultBox = document.getElementById('resultBox');
+    const errorBox = document.getElementById('errorBox');
+
+    btn.disabled = true;
+    loading.style.display = 'block';
+    resultBox.style.display = 'none';
+    errorBox.style.display = 'none';
+
+    try {
+      const fileData = await toBase64(file);
+      const mediaType = file.type || 'image/jpeg';
+
+      const response = await fetch('/.netlify/functions/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileData, mediaType, symptoms }),
+      });
+
+      const data = await response.json();
+
+      if (data.result) {
+        loading.style.display = 'none';
+        resultBox.style.display = 'block';
+        resultBox.textContent = data.result;
+      } else {
+        throw new Error(data.error || 'Неизвестная ошибка');
+      }
+    } catch (err) {
+      loading.style.display = 'none';
+      showError('Что-то пошло не так. Попробуй ещё раз или пришли файл чётче.');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  function toBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function showError(msg) {
+    const errorBox = document.getElementById('errorBox');
+    errorBox.style.display = 'block';
+    errorBox.textContent = msg;
+  }
+</script>
+</body>
+</html>
