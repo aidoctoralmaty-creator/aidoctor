@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>aiDoctor — расшифровка анализов за минуту</title>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://widget.tiptoppay.kz/bundles/widget.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -98,7 +99,6 @@
     white-space: nowrap;
   }
 
-  /* UPLOAD FORM */
   .upload-section {
     width: 100%;
     background: #f8fafc;
@@ -189,7 +189,6 @@
     cursor: not-allowed;
   }
 
-  /* RESULT */
   .result-box {
     display: none;
     width: 100%;
@@ -202,6 +201,65 @@
     line-height: 1.8;
     color: #0f172a;
     white-space: pre-wrap;
+  }
+
+  .paywall {
+    display: none;
+    width: 100%;
+    background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+    border-radius: 20px;
+    padding: 28px 24px;
+    margin-bottom: 20px;
+    text-align: center;
+    color: white;
+  }
+  .paywall-emoji { font-size: 2rem; margin-bottom: 12px; display: block; }
+  .paywall-title {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 900;
+    font-size: 1.4rem;
+    margin-bottom: 8px;
+    line-height: 1.2;
+  }
+  .paywall-desc {
+    font-size: 0.9rem;
+    opacity: 0.85;
+    margin-bottom: 20px;
+    line-height: 1.6;
+  }
+  .paywall-price {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 2rem;
+    font-weight: 900;
+    margin-bottom: 4px;
+  }
+  .paywall-price-desc {
+    font-size: 0.8rem;
+    opacity: 0.7;
+    margin-bottom: 20px;
+  }
+  .btn-pay {
+    width: 100%;
+    background: white;
+    color: #2563eb;
+    border: none;
+    padding: 16px 24px;
+    border-radius: 14px;
+    font-size: 1rem;
+    font-weight: 700;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  }
+  .btn-pay:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .paywall-guarantee {
+    font-size: 0.75rem;
+    opacity: 0.6;
+    margin-top: 12px;
   }
 
   .error-box {
@@ -225,17 +283,16 @@
     font-weight: 600;
     font-size: 0.95rem;
   }
-  .loading-dots::after {
-    content: '';
-    animation: dots 1.5s infinite;
-  }
   @keyframes dots {
     0% { content: '.'; }
     33% { content: '..'; }
     66% { content: '...'; }
   }
+  .loading-dots::after {
+    content: '.';
+    animation: dots 1.5s infinite;
+  }
 
-  /* TRUST */
   .trust {
     display: flex;
     align-items: center;
@@ -290,11 +347,10 @@
     <div class="feat">🇰🇿 Любая лаборатория Казахстана</div>
   </div>
 
-  <!-- UPLOAD FORM -->
   <div class="upload-section" id="uploadSection">
     <label class="upload-label" for="fileInput">
       <span class="upload-icon">📎</span>
-      <div class="upload-title">Загрузи анализ</div>
+      <div class="upload-title" id="uploadTitle">Загрузи анализ</div>
       <div class="upload-hint">Фото или PDF — нажми или перетащи сюда</div>
     </label>
     <input type="file" id="fileInput" accept="image/*,.pdf">
@@ -313,8 +369,19 @@
   </div>
 
   <div class="error-box" id="errorBox"></div>
-
   <div class="result-box" id="resultBox"></div>
+
+  <div class="paywall" id="paywall">
+    <span class="paywall-emoji">🔬</span>
+    <div class="paywall-title">Хочешь разобрать остальные анализы?</div>
+    <div class="paywall-desc">Один анализ — это только часть картины.<br>Загрузи все и я скажу что реально происходит.</div>
+    <div class="paywall-price">2 000 ₸</div>
+    <div class="paywall-price-desc">7 разборов · 24 часа доступа</div>
+    <button class="btn-pay" onclick="openPayment()">
+      💳 Получить полный доступ
+    </button>
+    <div class="paywall-guarantee">🔒 Безопасная оплата · Мгновенный доступ</div>
+  </div>
 
   <div class="trust">
     <div class="trust-item"><span class="ti">✓</span> Уже помогли 2 400+ в Казахстане</div>
@@ -334,8 +401,16 @@
 </div>
 
 <script>
+  const PUBLIC_ID = 'pk_7d5f837f7ff9dc11991ff32688bb7';
+
+  let analysisCount = parseInt(localStorage.getItem('analysisCount') || '0');
+  let paidUntil = parseInt(localStorage.getItem('paidUntil') || '0');
+  let hasPaid = paidUntil > Date.now();
+
   const fileInput = document.getElementById('fileInput');
   const fileSelected = document.getElementById('fileSelected');
+
+  if (hasPaid) updateUIForPaid();
 
   fileInput.addEventListener('change', function() {
     if (this.files[0]) {
@@ -346,8 +421,11 @@
 
   async function analyzeFile() {
     const file = fileInput.files[0];
-    if (!file) {
-      showError('Сначала загрузи файл с анализом');
+    if (!file) { showError('Сначала загрузи файл с анализом'); return; }
+
+    if (!hasPaid && analysisCount >= 1) {
+      document.getElementById('paywall').style.display = 'block';
+      document.getElementById('paywall').scrollIntoView({ behavior: 'smooth' });
       return;
     }
 
@@ -361,6 +439,7 @@
     loading.style.display = 'block';
     resultBox.style.display = 'none';
     errorBox.style.display = 'none';
+    document.getElementById('paywall').style.display = 'none';
 
     try {
       const fileData = await toBase64(file);
@@ -378,6 +457,18 @@
         loading.style.display = 'none';
         resultBox.style.display = 'block';
         resultBox.textContent = data.result;
+
+        analysisCount++;
+        localStorage.setItem('analysisCount', analysisCount);
+
+        if (!hasPaid && analysisCount >= 1) {
+          setTimeout(() => {
+            document.getElementById('paywall').style.display = 'block';
+            document.getElementById('uploadTitle').textContent = 'Загрузи следующий анализ';
+            document.getElementById('analyzeBtn').textContent = '🔒 Ещё один разбор';
+            document.getElementById('paywall').scrollIntoView({ behavior: 'smooth' });
+          }, 2000);
+        }
       } else {
         throw new Error(data.error || 'Неизвестная ошибка');
       }
@@ -387,6 +478,36 @@
     } finally {
       btn.disabled = false;
     }
+  }
+
+  function updateUIForPaid() {
+    document.getElementById('analyzeBtn').textContent = '🔬 Разобрать анализ';
+  }
+
+  function openPayment() {
+    const widget = new cp.CloudPayments({ language: 'ru-KZ' });
+    widget.pay('charge', {
+      publicId: PUBLIC_ID,
+      description: 'aiDoctor — 7 разборов анализов на 24 часа',
+      amount: 2000,
+      currency: 'KZT',
+      invoiceId: 'order_' + Date.now(),
+      skin: 'mini',
+    }, {
+      onSuccess: function() {
+        const until = Date.now() + 24 * 60 * 60 * 1000;
+        localStorage.setItem('paidUntil', until);
+        localStorage.setItem('analysisCount', '0');
+        hasPaid = true;
+        analysisCount = 0;
+        document.getElementById('paywall').style.display = 'none';
+        updateUIForPaid();
+        alert('✅ Оплата прошла! 7 разборов на 24 часа активированы.');
+      },
+      onFail: function() {
+        alert('❌ Оплата не прошла. Попробуй ещё раз.');
+      }
+    });
   }
 
   function toBase64(file) {
