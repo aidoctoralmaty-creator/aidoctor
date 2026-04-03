@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>aiDoctor PRO — полный разбор</title>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://widget.tiptoppay.kz/bundles/widget.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -73,15 +74,19 @@
     border: 1px solid #bfdbfe;
     border-radius: 14px;
     padding: 12px 18px;
-    margin-bottom: 24px;
+    margin-bottom: 16px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     font-size: 0.85rem;
+    flex-wrap: wrap;
+    gap: 8px;
   }
   .timer-label { color: #64748b; }
   .timer-value { color: #2563eb; font-weight: 700; font-family: monospace; font-size: 1rem; }
-  .analyses-left { color: #10b981; font-weight: 600; font-size: 0.8rem; }
+  .requests-left { color: #10b981; font-weight: 600; font-size: 0.8rem; }
+  .requests-left.low { color: #f59e0b; }
+  .requests-left.empty { color: #ef4444; }
 
   .person-block {
     width: 100%;
@@ -309,10 +314,12 @@
     text-align: center;
   }
 
+  /* ACCESS DENIED */
   .access-denied {
     display: none;
     text-align: center;
     padding: 40px 20px;
+    width: 100%;
   }
   .access-denied-emoji { font-size: 3rem; margin-bottom: 16px; display: block; }
   .access-denied-title {
@@ -323,18 +330,33 @@
     color: #0f172a;
   }
   .access-denied-text { color: #64748b; margin-bottom: 24px; line-height: 1.6; }
-  .btn-go-home {
+  .btn-pay-again {
+    width: 100%;
     background: #2563eb;
     color: white;
     border: none;
-    padding: 14px 28px;
-    border-radius: 12px;
-    font-size: 0.95rem;
+    padding: 18px 24px;
+    border-radius: 16px;
+    font-size: 1rem;
     font-weight: 700;
+    font-family: 'Inter', sans-serif;
     cursor: pointer;
-    text-decoration: none;
-    display: inline-block;
+    transition: background 0.2s, transform 0.2s;
+    box-shadow: 0 8px 32px rgba(37,99,235,0.3);
+    margin-bottom: 12px;
   }
+  .btn-pay-again:hover {
+    background: #1d4ed8;
+    transform: translateY(-2px);
+  }
+  .btn-go-home {
+    display: inline-block;
+    color: #94a3b8;
+    text-decoration: none;
+    font-size: 0.85rem;
+    margin-top: 8px;
+  }
+  .btn-go-home:hover { color: #64748b; }
 
   .legal {
     text-align: center;
@@ -350,16 +372,22 @@
 <body>
 <div class="card">
 
- <div class="access-denied" id="accessDenied">
+  <!-- ACCESS DENIED -->
+  <div class="access-denied" id="accessDenied">
     <span class="access-denied-emoji">⏰</span>
     <div class="access-denied-title">Время доступа вышло</div>
-    <div class="access-denied-text">Твои 7 разборов использованы или прошло 24 часа.<br>Продли доступ — и продолжим с того места где остановились.</div>
-    <button class="btn-go-home" onclick="openPayment()" style="border:none; cursor:pointer;">
-        💳 Продлить доступ — 2 000 ₸
+    <div class="access-denied-text">
+      Твои 7 разборов использованы или прошло 24 часа.<br>
+      Продли доступ — и продолжим с того места где остановились.
+    </div>
+    <button class="btn-pay-again" onclick="openPayment()">
+      💳 Продлить доступ — 2 000 ₸
     </button>
-    <div style="margin-top:12px; font-size:0.75rem; color:#94a3b8;">← <a href="/" style="color:#94a3b8;">Вернуться на главную</a></div>
-</div>
+    <br>
+    <a href="/" class="btn-go-home">← Вернуться на главную</a>
+  </div>
 
+  <!-- MAIN CONTENT -->
   <div id="mainContent" style="display:none; width:100%">
     <div style="display:flex; flex-direction:column; align-items:center; width:100%">
 
@@ -374,7 +402,7 @@
       <div class="timer-bar">
         <span class="timer-label">⏱ Доступ активен ещё:</span>
         <span class="timer-value" id="timerValue">--:--:--</span>
-        <span class="analyses-left">● активен</span>
+        <span class="requests-left" id="requestsLeft">● 7 разборов осталось</span>
       </div>
 
       <div id="personsContainer" style="width:100%"></div>
@@ -405,11 +433,14 @@
 </div>
 
 <script>
+  const PUBLIC_ID = 'pk_fe185682077841c0fd51f51146835';
+  const MAX_REQUESTS = 7;
+
   let personCount = 0;
   let paidUntil = 0;
+  let requestsUsed = 0;
   const personFiles = {};
 
-  // Session ID для хранения истории
   let sessionId = localStorage.getItem('pro_session_id');
   if (!sessionId) {
     sessionId = Math.random().toString(36).substring(2) + Date.now().toString(36);
@@ -423,24 +454,55 @@
     if (token) {
       const stored = localStorage.getItem('pro_token_' + token);
       if (stored) {
-        paidUntil = parseInt(stored);
+        const data = JSON.parse(stored);
+        paidUntil = data.until || parseInt(stored);
+        requestsUsed = data.requests || 0;
       } else {
         paidUntil = Date.now() + 24 * 60 * 60 * 1000;
-        localStorage.setItem('pro_token_' + token, paidUntil);
+        requestsUsed = 0;
+        saveTokenData(token);
       }
+      localStorage.setItem('current_token', token);
     } else {
       paidUntil = parseInt(localStorage.getItem('paidUntil') || '0');
+      requestsUsed = parseInt(localStorage.getItem('requestsUsed') || '0');
     }
 
-    if (paidUntil > Date.now()) {
-      document.getElementById('accessDenied').style.display = 'none';
-      document.getElementById('mainContent').style.display = 'block';
-      startTimer();
-      addPerson();
+    if (paidUntil > Date.now() && requestsUsed < MAX_REQUESTS) {
+      showMain();
     } else {
-      document.getElementById('accessDenied').style.display = 'block';
-      document.getElementById('mainContent').style.display = 'none';
+      showAccessDenied();
     }
+  }
+
+  function saveTokenData(token) {
+    const t = token || localStorage.getItem('current_token');
+    if (t) {
+      localStorage.setItem('pro_token_' + t, JSON.stringify({ until: paidUntil, requests: requestsUsed }));
+    } else {
+      localStorage.setItem('paidUntil', paidUntil);
+      localStorage.setItem('requestsUsed', requestsUsed);
+    }
+  }
+
+  function showMain() {
+    document.getElementById('accessDenied').style.display = 'none';
+    document.getElementById('mainContent').style.display = 'block';
+    updateRequestsDisplay();
+    startTimer();
+    if (personCount === 0) addPerson();
+  }
+
+  function showAccessDenied() {
+    document.getElementById('accessDenied').style.display = 'block';
+    document.getElementById('mainContent').style.display = 'none';
+  }
+
+  function updateRequestsDisplay() {
+    const left = MAX_REQUESTS - requestsUsed;
+    const el = document.getElementById('requestsLeft');
+    el.textContent = `● ${left} разбор${left === 1 ? '' : left < 5 ? 'а' : 'ов'} осталось`;
+    el.className = 'requests-left' + (left <= 2 ? ' low' : '') + (left === 0 ? ' empty' : '');
   }
 
   function startTimer() {
@@ -448,8 +510,7 @@
       const left = paidUntil - Date.now();
       if (left <= 0) {
         document.getElementById('timerValue').textContent = '00:00:00';
-        document.getElementById('accessDenied').style.display = 'block';
-        document.getElementById('mainContent').style.display = 'none';
+        showAccessDenied();
         return;
       }
       const h = Math.floor(left / 3600000);
@@ -499,7 +560,7 @@
       <input class="file-input" type="file" id="files_${id}" accept="image/*,.pdf" multiple onchange="addFiles(${id})">
       <div class="files-list" id="filesList_${id}"></div>
       <label class="field-label" style="margin-top:12px">Жалобы или уточнения (необязательно)</label>
-      <textarea class="symptoms-textarea" id="symptoms_${id}" rows="2" placeholder="Устаёт, голова кружится, или: вот результат измерения давления — 145/90..."></textarea>
+      <textarea class="symptoms-textarea" id="symptoms_${id}" rows="2" placeholder="Устаёт, голова кружится, или: вот результат — 145/90..."></textarea>
     `;
     container.appendChild(block);
   }
@@ -534,6 +595,11 @@
   }
 
   async function analyzeAll() {
+    if (requestsUsed >= MAX_REQUESTS) {
+      showAccessDenied();
+      return;
+    }
+
     const persons = document.querySelectorAll('.person-block');
     if (persons.length === 0) { showError('Добавь хотя бы одного человека'); return; }
 
@@ -568,10 +634,7 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            name,
-            age,
-            gender,
-            symptoms,
+            name, age, gender, symptoms,
             files: filesData,
             session_id: sessionId
           }),
@@ -580,6 +643,10 @@
         const data = await response.json();
 
         if (data.result) {
+          requestsUsed++;
+          saveTokenData();
+          updateRequestsDisplay();
+
           const block = document.createElement('div');
           block.className = 'result-block';
           block.innerHTML = `
@@ -587,6 +654,10 @@
             <div class="result-text">${data.result}</div>
           `;
           resultsContainer.appendChild(block);
+
+          if (requestsUsed >= MAX_REQUESTS) {
+            setTimeout(() => showAccessDenied(), 3000);
+          }
         }
       }
     } catch (err) {
@@ -595,6 +666,28 @@
       loading.style.display = 'none';
       btn.disabled = false;
     }
+  }
+
+  function openPayment() {
+    const widget = new cp.CloudPayments({ language: 'ru-KZ' });
+    widget.pay('charge', {
+      publicId: PUBLIC_ID,
+      description: 'aiDoctor PRO — 7 разборов на 24 часа',
+      amount: 2000,
+      currency: 'KZT',
+      invoiceId: 'order_' + Date.now(),
+      skin: 'mini',
+    }, {
+      onSuccess: function() {
+        const until = Date.now() + 24 * 60 * 60 * 1000;
+        const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
+        localStorage.setItem('pro_token_' + token, JSON.stringify({ until, requests: 0 }));
+        window.location.href = '/pro.html?token=' + token;
+      },
+      onFail: function() {
+        alert('❌ Оплата не прошла. Попробуй ещё раз.');
+      }
+    });
   }
 
   function toBase64(file) {
