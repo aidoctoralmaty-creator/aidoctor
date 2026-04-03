@@ -350,12 +350,15 @@
 <body>
 <div class="card">
 
-  <div class="access-denied" id="accessDenied">
-    <span class="access-denied-emoji">🔒</span>
-    <div class="access-denied-title">Доступ истёк</div>
-    <div class="access-denied-text">Время доступа вышло или ссылка недействительна.<br>Вернись и оплати снова.</div>
-    <a href="/" class="btn-go-home">← Вернуться на главную</a>
-  </div>
+ <div class="access-denied" id="accessDenied">
+    <span class="access-denied-emoji">⏰</span>
+    <div class="access-denied-title">Время доступа вышло</div>
+    <div class="access-denied-text">Твои 7 разборов использованы или прошло 24 часа.<br>Продли доступ — и продолжим с того места где остановились.</div>
+    <button class="btn-go-home" onclick="openPayment()" style="border:none; cursor:pointer;">
+        💳 Продлить доступ — 2 000 ₸
+    </button>
+    <div style="margin-top:12px; font-size:0.75rem; color:#94a3b8;">← <a href="/" style="color:#94a3b8;">Вернуться на главную</a></div>
+</div>
 
   <div id="mainContent" style="display:none; width:100%">
     <div style="display:flex; flex-direction:column; align-items:center; width:100%">
