@@ -546,7 +546,7 @@
         const symptoms = document.getElementById('symptoms_' + id)?.value || '';
         const files = personFiles[id] || [];
 
-        if (files.length === 0) continue;
+        if (files.length === 0 && !symptoms) continue;
 
         const filesData = await Promise.all(files.map(async f => ({
           data: await toBase64(f),
