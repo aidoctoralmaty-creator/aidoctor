@@ -52,11 +52,7 @@ exports.handler = async (event) => {
     const body = JSON.parse(event.body);
     const { name, age, gender, symptoms, files } = body;
 
-    if (!files || files.length === 0) {
-      return { statusCode: 400, body: JSON.stringify({ error: "Нет файлов" }) };
-    }
-
-    const content = [];
+        const content = [];
 
     // Добавляем все файлы
     for (const file of files) {
