@@ -55,7 +55,7 @@ exports.handler = async (event) => {
         const content = [];
 
     // Добавляем все файлы
-    for (const file of files) {
+    for (const file of (files || [])) {
       if (file.mediaType === "application/pdf") {
         content.push({
           type: "document",
