@@ -495,15 +495,11 @@
       skin: 'mini',
     }, {
       onSuccess: function() {
-        const until = Date.now() + 24 * 60 * 60 * 1000;
-        localStorage.setItem('paidUntil', until);
-        localStorage.setItem('analysisCount', '0');
-        hasPaid = true;
-        analysisCount = 0;
-        document.getElementById('paywall').style.display = 'none';
-        updateUIForPaid();
-        alert('✅ Оплата прошла! 7 разборов на 24 часа активированы.');
-      },
+  const until = Date.now() + 24 * 60 * 60 * 1000;
+  const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
+  localStorage.setItem('pro_token_' + token, until);
+  window.location.href = '/pro.html?token=' + token;
+},
       onFail: function() {
         alert('❌ Оплата не прошла. Попробуй ещё раз.');
       }
