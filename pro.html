@@ -358,8 +358,8 @@
   </div>
 
   <div id="mainContent" style="display:none; width:100%">
-
     <div style="display:flex; flex-direction:column; align-items:center; width:100%">
+
       <div class="logo">
         <div class="logo-text">ai<span>Doctor</span></div>
       </div>
@@ -395,8 +395,8 @@
         ⚠️ Не заменяет консультацию врача &nbsp;·&nbsp;
         <a href="/">Главная</a>
       </div>
-    </div>
 
+    </div>
   </div>
 
 </div>
@@ -405,6 +405,13 @@
   let personCount = 0;
   let paidUntil = 0;
   const personFiles = {};
+
+  // Session ID для хранения истории
+  let sessionId = localStorage.getItem('pro_session_id');
+  if (!sessionId) {
+    sessionId = Math.random().toString(36).substring(2) + Date.now().toString(36);
+    localStorage.setItem('pro_session_id', sessionId);
+  }
 
   function checkAccess() {
     const params = new URLSearchParams(window.location.search);
@@ -488,8 +495,8 @@
       </label>
       <input class="file-input" type="file" id="files_${id}" accept="image/*,.pdf" multiple onchange="addFiles(${id})">
       <div class="files-list" id="filesList_${id}"></div>
-      <label class="field-label" style="margin-top:12px">Жалобы (необязательно)</label>
-      <textarea class="symptoms-textarea" id="symptoms_${id}" rows="2" placeholder="Устаёт, голова кружится, давление скачет..."></textarea>
+      <label class="field-label" style="margin-top:12px">Жалобы или уточнения (необязательно)</label>
+      <textarea class="symptoms-textarea" id="symptoms_${id}" rows="2" placeholder="Устаёт, голова кружится, или: вот результат измерения давления — 145/90..."></textarea>
     `;
     container.appendChild(block);
   }
@@ -557,7 +564,14 @@
         const response = await fetch('/.netlify/functions/analyze-pro', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, age, gender, symptoms, files: filesData }),
+          body: JSON.stringify({
+            name,
+            age,
+            gender,
+            symptoms,
+            files: filesData,
+            session_id: sessionId
+          }),
         });
 
         const data = await response.json();
