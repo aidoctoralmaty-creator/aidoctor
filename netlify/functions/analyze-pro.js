@@ -52,9 +52,8 @@ exports.handler = async (event) => {
     const body = JSON.parse(event.body);
     const { name, age, gender, symptoms, files } = body;
 
-        const content = [];
+    const content = [];
 
-    // Добавляем все файлы
     for (const file of (files || [])) {
       if (file.mediaType === "application/pdf") {
         content.push({
@@ -69,8 +68,7 @@ exports.handler = async (event) => {
       }
     }
 
-    // Добавляем контекст
-    let userText = `Разбери анализы для: ${name}`;
+    let userText = `Разбери для: ${name || "пользователя"}`;
     if (age) userText += `, ${age} лет`;
     if (gender) userText += `, ${gender}`;
     if (symptoms) userText += `\n\nЖалобы: ${symptoms}`;
@@ -96,4 +94,9 @@ exports.handler = async (event) => {
   } catch (err) {
     console.error(err);
     return {
-      statusCod
+      statusCode: 500,
+      headers: { "Access-Control-Allow-Origin": "*" },
+      body: JSON.stringify({ error: "Ошибка обработки" }),
+    };
+  }
+};
