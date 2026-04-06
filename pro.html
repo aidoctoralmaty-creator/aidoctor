@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -138,6 +139,17 @@
 
   function checkAccess() {
     const params = new URLSearchParams(window.location.search);
+    
+    // МАСТЕР-КОД ДЛЯ ТЕСТИРОВАНИЯ
+    const masterCode = params.get('master');
+    if (masterCode === 'dev2025') {
+      const token = 'master_dev2025';
+      const until = Date.now() + 100 * 365 * 24 * 60 * 60 * 1000; // 100 лет
+      localStorage.setItem('pro_token_' + token, JSON.stringify({ until, requests: 0 }));
+      window.location.href = '/pro.html?token=' + token;
+      return;
+    }
+    
     const token = params.get('token');
 
     if (token) {
@@ -352,7 +364,7 @@
       skin: 'mini',
     }, {
       onSuccess: function() {
-        const until = Date.now() + 24 * 60 * 60 * 1000;
+        const until = Date.now() + 100 * 365 * 24 * 60 * 60 * 1000; // 100 лет
         const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
         localStorage.setItem('pro_token_' + token, JSON.stringify({ until, requests: 0 }));
         window.location.href = '/pro.html?token=' + token;
