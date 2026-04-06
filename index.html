@@ -39,19 +39,6 @@
   }
   .logo-text span { color: #2563eb; }
 
-  .doctors-bar {
-    width: 100%;
-    background: #2563eb;
-    color: white;
-    text-align: center;
-    padding: 10px 20px;
-    border-radius: 12px;
-    font-family: 'Bricolage Grotesque', sans-serif;
-    font-weight: 800;
-    font-size: 1.1rem;
-    margin-bottom: 28px;
-  }
-
   h1 {
     font-family: 'Bricolage Grotesque', sans-serif;
     font-size: clamp(2.2rem, 8vw, 3.2rem);
@@ -79,33 +66,13 @@
     margin-top: 6px;
   }
 
-  .features {
-    display: flex;
-    gap: 8px;
-    justify-content: center;
-    flex-wrap: wrap;
-    margin: 20px 0;
-  }
-  .feat {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    padding: 7px 14px;
-    border-radius: 100px;
-    font-size: 0.78rem;
-    color: #475569;
-    white-space: nowrap;
-  }
-
   .upload-section {
     width: 100%;
     background: #f8fafc;
     border: 2px dashed #bfdbfe;
     border-radius: 20px;
     padding: 28px 24px;
-    margin-bottom: 16px;
+    margin-bottom: 20px;
     transition: border-color 0.2s;
   }
   .upload-section:hover { border-color: #2563eb; }
@@ -294,24 +261,33 @@
   }
 
   .trust {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    flex-wrap: wrap;
-    padding-top: 20px;
-    border-top: 1px solid #e2e8f0;
-    margin-bottom: 20px;
     width: 100%;
+    background: #f0f9ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 16px;
+    padding: 18px 20px;
+    margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
   }
   .trust-item {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 0.77rem;
-    color: #94a3b8;
+    gap: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #0f172a;
   }
-  .ti { color: #10b981; font-weight: 700; }
+  .ti { color: #10b981; font-weight: 700; font-size: 1.1rem; }
+
+  .creators {
+    text-align: center;
+    font-size: 0.75rem;
+    color: #94a3b8;
+    line-height: 1.8;
+    margin-bottom: 20px;
+  }
 
   .legal {
     text-align: center;
@@ -330,8 +306,6 @@
     <div class="logo-text">ai<span>Doctor</span></div>
   </div>
 
-  <div class="doctors-bar">Сделано врачами</div>
-
   <h1>Анализы пришли.<br><span class="accent">Что это значит?</span></h1>
 
   <p class="subtitle">
@@ -340,12 +314,6 @@
     А вопрос так и остался...<br>
     <span class="last-line">aiDoctor объяснит честно — за ~1 минуту.</span>
   </p>
-
-  <div class="features">
-    <div class="feat">⚡ Ответ за ~1 минуту</div>
-    <div class="feat">🔒 Данные не хранятся</div>
-    <div class="feat">🇰🇿 Любая лаборатория Казахстана</div>
-  </div>
 
   <div class="upload-section" id="uploadSection">
     <label class="upload-label" for="fileInput">
@@ -362,6 +330,12 @@
     <button class="btn-analyze" id="analyzeBtn" onclick="analyzeFile()">
       🆓 Расшифровать первый анализ бесплатно
     </button>
+  </div>
+
+  <div class="trust">
+    <div class="trust-item"><span class="ti">✓</span> Уже помогли 2 400+ в Казахстане</div>
+    <div class="trust-item"><span class="ti">✓</span> Без записи и очередей</div>
+    <div class="trust-item"><span class="ti">✓</span> Любая лаборатория</div>
   </div>
 
   <div class="loading" id="loading">
@@ -383,10 +357,9 @@
     <div class="paywall-guarantee">🔒 Безопасная оплата · Мгновенный доступ</div>
   </div>
 
-  <div class="trust">
-    <div class="trust-item"><span class="ti">✓</span> Уже помогли 2 400+ в Казахстане</div>
-    <div class="trust-item"><span class="ti">✓</span> Без записи и очередей</div>
-    <div class="trust-item"><span class="ti">✓</span> Любая лаборатория</div>
+  <div class="creators">
+    Создано коллективом врачей:<br>
+    педиатр · эндокринолог · кардиолог · гематолог · терапевт
   </div>
 
   <div class="legal">
@@ -495,11 +468,11 @@
       skin: 'mini',
     }, {
       onSuccess: function() {
-  const until = Date.now() + 24 * 60 * 60 * 1000;
-  const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
-  localStorage.setItem('pro_token_' + token, until);
-  window.location.href = '/pro.html?token=' + token;
-},
+        const until = Date.now() + 24 * 60 * 60 * 1000;
+        const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
+        localStorage.setItem('pro_token_' + token, until);
+        window.location.href = '/pro.html?token=' + token;
+      },
       onFail: function() {
         alert('❌ Оплата не прошла. Попробуй ещё раз.');
       }
