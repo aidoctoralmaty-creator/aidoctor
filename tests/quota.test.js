@@ -75,3 +75,17 @@ test("typed consultation and reusable summary survive a retry without an extra c
     assert.deepEqual([body.result, body.summary, body.offer, body.remaining], [answer.result, answer.summary, "labs", 4]);
   }
 });
+
+test("a follow-up requires its own conversation, reuses the document and is charged once", async () => {
+  const calls = [];
+  const { call } = fixture(async history => { calls.push(structuredClone(history)); return "Ответ"; });
+  const initial = { session_id: randomUUID(), request_id: randomUUID(), files: [{ mediaType: "application/pdf", data: "YQ==" }] };
+  await call(initial);
+  const next = { session_id: initial.session_id, request_id: randomUUID(), reply_to: initial.request_id, symptoms: "А месяц назад?" };
+  assert.equal((await call({ ...next, session_id: randomUUID() })).statusCode, 410);
+  assert.equal(JSON.parse((await call()).body).remaining, 4);
+  for (let i = 0; i < 2; i++) assert.equal(JSON.parse((await call(next)).body).remaining, 3);
+  assert.equal(calls.length, 2);
+  assert.equal(calls[1][0].content[0].type, "document");
+  assert.deepEqual(calls[1][2].content, [{ type: "text", text: "А месяц назад?" }]);
+});
