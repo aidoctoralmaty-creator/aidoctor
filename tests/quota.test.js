@@ -1,7 +1,8 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { randomUUID } = require("node:crypto");
-const { makeHandler } = require("../lib/analysis");
+let makeHandler;
+test.before(async () => { ({ makeHandler } = await import("../lib/analysis.mjs")); });
 const { monthKey } = require("../lib/quota");
 
 function memoryStore() {
