@@ -65,3 +65,13 @@ test("provider failure and invalid input do not consume quota; legacy format is 
   assert.equal(JSON.parse((await call(input)).body).remaining, 4);
   assert.equal((await import("../netlify/functions/analyze-pro.mjs")).default, (await import("../netlify/functions/analyze.mjs")).default);
 });
+
+test("typed consultation and reusable summary survive a retry without an extra charge", async () => {
+  const answer = { result: "Объяснение", summary: "Мой вопрос врачу", offer: "labs" };
+  const { call } = fixture(async () => answer);
+  const input = { symptoms: "Хочу обсудить анализы", request_id: randomUUID(), session_id: randomUUID() };
+  for (let i = 0; i < 2; i++) {
+    const body = JSON.parse((await call(input)).body);
+    assert.deepEqual([body.result, body.summary, body.offer, body.remaining], [answer.result, answer.summary, "labs", 4]);
+  }
+});

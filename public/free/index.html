@@ -67,11 +67,18 @@
   .author a, .visit a { color: #1d4ed8; text-underline-offset: 3px; }
   .visit { width: 100%; margin-top: 16px; padding: 12px 16px; border-left: 3px solid #2563eb; background: #eff6ff; border-radius: 4px; }
   .visit p { margin-top: 10px; }
+  .profile-link, .note button { display: inline-block; padding: 7px 13px; border: 1px solid #bfdbfe; border-radius: 8px; background: white; color: #1d4ed8; font: inherit; cursor: pointer; }
+  .profile-link { margin-top: 5px; font-size: .85rem; text-decoration: none; }
+  .note { margin-top: 14px; }
+  .note summary { cursor: pointer; color: #1d4ed8; font-weight: 600; }
+  .note textarea { display: block; width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #94a3b8; border-radius: 8px; font: inherit; }
+  .note button[hidden] { display: none; }
+  .note button { margin: 3px 8px 3px 0; }
 </style>
 </head><body><main class="card">
 <aside class="author" aria-label="Автор aiDoctor">
   <img src="https://nigmatullin.pro/doctor-main.webp" width="64" height="64" alt="Евгений Нигматуллин">
-  <div><strong>Евгений Нигматуллин</strong><p>Врач-остеопат в Алматы · автор aiDoctor</p><a href="https://nigmatullin.pro/osteopat-almaty">О враче</a></div>
+  <div><strong>Евгений Нигматуллин</strong><p>Врач-остеопат в Алматы · автор aiDoctor</p><a class="profile-link" href="https://nigmatullin.pro/osteopat-almaty">О враче</a></div>
 </aside>
 <div class="logo"><div class="logo-text">ai<span>Doctor</span></div></div>
 <h1>Бесплатный разбор <span class="accent">анализов</span></h1>
@@ -85,14 +92,23 @@
 <div class="error-box" id="errorBox" role="alert"></div>
 <div id="resultsContainer" aria-live="polite" style="width:100%"></div>
 <template id="visitOffer">
-  <aside class="visit" aria-label="Очная консультация в Алматы">
-    <strong>Первичная консультация у Евгения Нигматуллина</strong>
-    <p>30 минут · 10 000 ₸ · Алматы, ул. Кажымукана, 37</p>
-    <p><a href="https://wa.me/77024723352?text=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5%2C%20%D0%95%D0%B2%D0%B3%D0%B5%D0%BD%D0%B8%D0%B9.%20%D0%9F%D0%B8%D1%88%D1%83%20%D1%81%D0%BE%20%D1%81%D1%82%D1%80%D0%B0%D0%BD%D0%B8%D1%86%D1%8B%20aiDoctor.%20%D0%A5%D0%BE%D1%87%D1%83%20%D0%B7%D0%B0%D0%BF%D0%B8%D1%81%D0%B0%D1%82%D1%8C%D1%81%D1%8F%20%D0%BD%D0%B0%20%D0%BF%D0%B5%D1%80%D0%B2%D0%B8%D1%87%D0%BD%D1%83%D1%8E%20%D0%BA%D0%BE%D0%BD%D1%81%D1%83%D0%BB%D1%8C%D1%82%D0%B0%D1%86%D0%B8%D1%8E.">Написать Евгению в WhatsApp</a></p>
+  <aside class="visit" aria-label="Консультация в Алматы">
+    <strong></strong><p class="visit-terms"></p><p><a>Написать Евгению в WhatsApp</a></p>
   </aside>
 </template>
+<template id="doctorNote">
+  <details class="note">
+    <summary>Собрать кратко для врача</summary>
+    <label>Проверьте факты и при желании поправьте текст.
+      <textarea rows="5"></textarea>
+    </label>
+    <button type="button" class="copy-note">Скопировать</button>
+    <button type="button" class="send-note" hidden>Открыть WhatsApp со сводкой для Евгения</button>
+    <p role="status"></p>
+  </details>
+</template>
 <p class="legal">aiDoctor — ИИ-ассистент. Не заменяет консультацию врача.<br>
-<a href="https://docs.google.com/document/d/1rYlkkBQAixizFWOqBXLV2jx2j5mQpEX45Rj9S8_GMwQ/edit">Политика конфиденциальности</a> · <a href="https://nigmatullin.pro/">Сайт врача</a></p>
+<a href="https://docs.google.com/document/d/1rYlkkBQAixizFWOqBXLV2jx2j5mQpEX45Rj9S8_GMwQ/edit">Политика конфиденциальности</a> · <a href="https://nigmatullin.pro/">На главную</a></p>
 </main><script>
 const endpoint = '/aidoctor-api/analyze';
 let browserId;
@@ -188,7 +204,36 @@ function renderFilesList(id) {
     list.append(row);
   });
 }
-function showResult(id, label, reply) {
+const visits = {
+  labs: { title: 'Консультация врача по анализам', terms: '10 000 ₸', subject: 'консультацию по анализам' },
+  osteopathy: { title: 'Первичная консультация врача-остеопата', terms: '30 минут · 10 000 ₸', subject: 'первичную консультацию остеопата' },
+};
+function bookingUrl(visit, note = '') {
+  const text = 'Здравствуйте, Евгений. Пишу из aiDoctor. Хочу записаться на ' + visit.subject + '.' + (note ? '\n\n' + note : '');
+  return 'https://wa.me/77024723352?text=' + encodeURIComponent(text);
+}
+function doctorNote(summary, visit) {
+  const note = document.getElementById('doctorNote').content.firstElementChild.cloneNode(true);
+  const field = note.querySelector('textarea');
+  field.value = summary;
+  const status = note.querySelector('[role="status"]');
+  note.querySelector('.copy-note').onclick = async () => {
+    try {
+      await navigator.clipboard.writeText(field.value);
+      status.textContent = 'Сводка скопирована.';
+    } catch {
+      field.focus(); field.select();
+      status.textContent = 'Текст выделен. Выберите «Копировать».';
+    }
+  };
+  if (visit) {
+    const send = note.querySelector('.send-note');
+    send.hidden = false;
+    send.onclick = () => window.open(bookingUrl(visit, field.value.trim()), '_blank', 'noopener,noreferrer');
+  }
+  return note;
+}
+function showResult(id, label, answer, originalQuestion) {
   let block = document.getElementById('result_' + id);
   if (!block) {
     block = document.createElement('section');
@@ -201,13 +246,17 @@ function showResult(id, label, reply) {
   title.textContent = label;
   const body = document.createElement('p');
   body.className = 'result-text';
-  const lines = reply.trimEnd().split('\n');
-  const booking = lines.at(-1).trim() === '[ЗАПИСЬ]';
-  body.textContent = (booking ? lines.slice(0, -1).join('\n') : reply).trim();
+  body.textContent = answer.result;
   block.replaceChildren(title, body);
-  if (booking) {
-    block.append(document.getElementById('visitOffer').content.cloneNode(true));
+  const visit = Object.hasOwn(visits, answer.offer) ? visits[answer.offer] : null;
+  if (visit) {
+    const card = document.getElementById('visitOffer').content.cloneNode(true);
+    card.querySelector('strong').textContent = visit.title + ' · Евгений Нигматуллин';
+    card.querySelector('.visit-terms').textContent = visit.terms + ' · Алматы, ул. Кажымукана, 37';
+    card.querySelector('a').href = bookingUrl(visit);
+    block.append(card);
   }
+  block.append(doctorNote(answer.summary || originalQuestion || '', visit));
 }
 async function analyzeAll() {
   const button = document.getElementById('analyzeBtn');
@@ -238,7 +287,7 @@ async function analyzeAll() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Попробуй ещё раз.');
       showQuota(data);
-      showResult(id, name || 'Разбор ' + id, data.result);
+      showResult(id, name || 'Разбор ' + id, data, symptoms);
     }
     if (!sent) showError('Добавь файл или напиши вопрос.');
   } catch (error) {
