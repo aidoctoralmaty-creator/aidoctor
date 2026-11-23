@@ -60,11 +60,23 @@
   .legal { text-align: center; font-size: 0.7rem; color: #475569; line-height: 1.9; margin-top: 8px; }
   .legal a { color: #475569; text-decoration: none; }
   .legal a:hover { color: #94a3b8; }
+  .author { width: 100%; display: flex; align-items: center; gap: 14px; padding-bottom: 18px; margin-bottom: 18px; border-bottom: 1px solid #e2e8f0; }
+  .author img { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; object-position: center 25%; }
+  .author p, .visit p { color: #334155; line-height: 1.55; }
+  .author p { font-size: .9rem; }
+  .author a, .visit a { color: #1d4ed8; text-underline-offset: 3px; }
+  .visit { width: 100%; margin-top: 16px; padding: 12px 16px; border-left: 3px solid #2563eb; background: #eff6ff; border-radius: 4px; }
+  .visit p { margin-top: 10px; }
 </style>
 </head><body><main class="card">
+<aside class="author" aria-label="Автор aiDoctor">
+  <img src="https://nigmatullin.pro/doctor-main.webp" width="64" height="64" alt="Евгений Нигматуллин">
+  <div><strong>Евгений Нигматуллин</strong><p>Врач-остеопат в Алматы · автор aiDoctor</p><a href="https://nigmatullin.pro/osteopat-almaty">О враче</a></div>
+</aside>
 <div class="logo"><div class="logo-text">ai<span>Doctor</span></div></div>
 <h1>Бесплатный разбор <span class="accent">анализов</span></h1>
 <p class="subtitle">Сравни анализы за разные даты или задай один вопрос по нескольким бланкам. Все файлы одного человека в одном запросе считаются одним разбором.</p>
+
 <p class="subtitle" id="quota" aria-live="polite">5 бесплатных разборов в календарный месяц на один ID браузера.</p>
 <div id="personsContainer" style="width:100%"></div>
 <button class="btn-add-person" onclick="addPerson()">+ Добавить ещё одного человека</button>
@@ -72,6 +84,13 @@
 <div class="loading" id="loading" role="status">Разбираю результаты…</div>
 <div class="error-box" id="errorBox" role="alert"></div>
 <div id="resultsContainer" aria-live="polite" style="width:100%"></div>
+<template id="visitOffer">
+  <aside class="visit" aria-label="Очная консультация в Алматы">
+    <strong>Первичная консультация у Евгения Нигматуллина</strong>
+    <p>30 минут · 10 000 ₸ · Алматы, ул. Кажымукана, 37</p>
+    <p><a href="https://wa.me/77024723352?text=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5%2C%20%D0%95%D0%B2%D0%B3%D0%B5%D0%BD%D0%B8%D0%B9.%20%D0%9F%D0%B8%D1%88%D1%83%20%D1%81%D0%BE%20%D1%81%D1%82%D1%80%D0%B0%D0%BD%D0%B8%D1%86%D1%8B%20aiDoctor.%20%D0%A5%D0%BE%D1%87%D1%83%20%D0%B7%D0%B0%D0%BF%D0%B8%D1%81%D0%B0%D1%82%D1%8C%D1%81%D1%8F%20%D0%BD%D0%B0%20%D0%BF%D0%B5%D1%80%D0%B2%D0%B8%D1%87%D0%BD%D1%83%D1%8E%20%D0%BA%D0%BE%D0%BD%D1%81%D1%83%D0%BB%D1%8C%D1%82%D0%B0%D1%86%D0%B8%D1%8E.">Написать Евгению в WhatsApp</a></p>
+  </aside>
+</template>
 <p class="legal">aiDoctor — ИИ-ассистент. Не заменяет консультацию врача.<br>
 <a href="https://docs.google.com/document/d/1rYlkkBQAixizFWOqBXLV2jx2j5mQpEX45Rj9S8_GMwQ/edit">Политика конфиденциальности</a> · <a href="https://nigmatullin.pro/">Сайт врача</a></p>
 </main><script>
@@ -108,7 +127,7 @@ async function refreshQuota() {
         <div><label class="field-label">Возраст</label><input class="field-input" id="age_${id}" placeholder="42" type="number" /></div>
         <div><label class="field-label">Пол</label><select class="field-select" id="gender_${id}"><option value="">—</option><option value="женский">Женский</option><option value="мужской">Мужской</option></select></div>
       </div>
-      <label class="files-label">Анализы (фото или PDF, можно несколько)</label>
+      <label class="files-label">Анализы или текст заключения МРТ (фото или PDF, можно несколько)</label>
       <label class="file-drop" for="files_${id}"><div class="file-drop-text">📎 Выбрать файлы · всего до 4 МБ</div></label>
       <input class="file-input" type="file" id="files_${id}" accept="image/jpeg,image/png,image/webp,image/gif,.pdf" multiple onchange="addFiles(${id})">
       <div class="files-list" id="filesList_${id}"></div>
@@ -182,14 +201,12 @@ function showResult(id, label, reply) {
   title.textContent = label;
   const body = document.createElement('p');
   body.className = 'result-text';
-  const booking = /\[ЗАПИСЬ\]\s*$/.test(reply);
-  body.textContent = reply.replace(/\[ЗАПИСЬ\]\s*$/, '').trim();
+  const lines = reply.trimEnd().split('\n');
+  const booking = lines.at(-1).trim() === '[ЗАПИСЬ]';
+  body.textContent = (booking ? lines.slice(0, -1).join('\n') : reply).trim();
   block.replaceChildren(title, body);
   if (booking) {
-    const link = document.createElement('a');
-    link.href = 'https://nigmatullin.pro/kontakty';
-    link.textContent = 'Записаться к Евгению на очный приём';
-    block.append(link);
+    block.append(document.getElementById('visitOffer').content.cloneNode(true));
   }
 }
 async function analyzeAll() {
