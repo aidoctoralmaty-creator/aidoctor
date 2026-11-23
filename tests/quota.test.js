@@ -62,5 +62,5 @@ test("provider failure and invalid input do not consume quota; legacy format is 
   assert.equal((await call(input)).statusCode, 503);
   assert.equal(JSON.parse((await call()).body).remaining, 5);
   assert.equal(JSON.parse((await call(input)).body).remaining, 4);
-  assert.equal(require("../netlify/functions/analyze-pro").handler, require("../netlify/functions/analyze").handler);
+  assert.equal((await import("../netlify/functions/analyze-pro.mjs")).default, (await import("../netlify/functions/analyze.mjs")).default);
 });
