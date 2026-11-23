@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="ru"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>aiDoctor — бесплатный разбор анализов</title>
+<link rel="canonical" href="https://nigmatullin.pro/aidoctor/">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #ffffff;
+    color: #0f172a;
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 20px 40px;
+  }
+  .card { width: 100%; max-width: 560px; display: flex; flex-direction: column; align-items: center; }
+  .logo { margin-bottom: 8px; }
+  .logo-text { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 1.6rem; color: #0f172a; }
+  .logo-text span { color: #2563eb; }
+  h1 { font-family: 'Bricolage Grotesque', sans-serif; font-size: clamp(1.8rem, 6vw, 2.4rem); font-weight: 900; line-height: 1.1; margin-bottom: 8px; text-align: center; color: #0f172a; }
+  h1 .accent { color: #2563eb; }
+  .subtitle { text-align: center; color: #64748b; font-size: 0.9rem; margin-bottom: 28px; line-height: 1.6; }
+  .requests-left { color: #10b981; font-weight: 600; font-size: 0.8rem; }
+  .person-block { width: 100%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; margin-bottom: 16px; }
+  .person-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .person-title { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 1rem; color: #0f172a; }
+  .btn-remove-person { background: none; border: 1px solid #fecdd3; color: #ef4444; cursor: pointer; font-size: 0.78rem; padding: 4px 10px; border-radius: 8px; transition: background 0.2s; }
+  .btn-remove-person:hover { background: #fff1f2; }
+  .person-fields { display: grid; grid-template-columns: 1fr 80px 1fr; gap: 10px; margin-bottom: 14px; }
+  .field-label { display: block; font-size: 0.75rem; font-weight: 600; color: #94a3b8; margin-bottom: 4px; }
+  .field-input { width: 100%; background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; font-family: 'Inter', sans-serif; font-size: 0.88rem; color: #0f172a; outline: none; transition: border-color 0.2s; }
+  .field-input:focus { border-color: #2563eb; }
+  .field-input::placeholder { color: #cbd5e1; }
+  .field-select { width: 100%; background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; font-family: 'Inter', sans-serif; font-size: 0.88rem; color: #0f172a; outline: none; cursor: pointer; }
+  .files-label { display: block; font-size: 0.75rem; font-weight: 600; color: #94a3b8; margin-bottom: 8px; }
+  .file-drop { width: 100%; background: white; border: 2px dashed #bfdbfe; border-radius: 12px; padding: 16px; text-align: center; cursor: pointer; transition: border-color 0.2s; margin-bottom: 10px; }
+  .file-drop:hover { border-color: #2563eb; }
+  .file-drop-text { font-size: 0.82rem; color: #94a3b8; }
+  .file-input { display: none; }
+  .files-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+  .file-item { display: flex; align-items: center; justify-content: space-between; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 8px 12px; font-size: 0.82rem; color: #1d4ed8; }
+  .file-item-remove { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 1rem; padding: 0 4px; }
+  .symptoms-textarea { width: 100%; background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; font-family: 'Inter', sans-serif; font-size: 0.88rem; color: #0f172a; resize: none; outline: none; transition: border-color 0.2s; margin-top: 10px; }
+  .symptoms-textarea:focus { border-color: #2563eb; }
+  .symptoms-textarea::placeholder { color: #cbd5e1; }
+  .btn-add-person { width: 100%; background: transparent; border: 2px dashed #bfdbfe; border-radius: 14px; padding: 14px; color: #2563eb; font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: border-color 0.2s, background 0.2s; margin-bottom: 20px; }
+  .btn-add-person:hover { border-color: #2563eb; background: #eff6ff; }
+  .btn-analyze { width: 100%; background: #2563eb; color: white; border: none; padding: 18px 24px; border-radius: 16px; font-size: 1rem; font-weight: 700; font-family: 'Inter', sans-serif; cursor: pointer; transition: background 0.2s, transform 0.2s, box-shadow 0.2s; box-shadow: 0 8px 32px rgba(37,99,235,0.3); margin-bottom: 24px; }
+  .btn-analyze:hover { background: #1d4ed8; transform: translateY(-2px); box-shadow: 0 16px 48px rgba(37,99,235,0.4); }
+  .btn-analyze:disabled { background: #94a3b8; transform: none; box-shadow: none; cursor: not-allowed; }
+  .loading { display: none; text-align: center; padding: 20px; color: #2563eb; font-weight: 600; }
+  @keyframes dots { 0% { content: '.'; } 33% { content: '..'; } 66% { content: '...'; } }
+  .loading-dots::after { content: '.'; animation: dots 1.5s infinite; }
+  .result-block { width: 100%; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 16px; padding: 20px; margin-bottom: 16px; font-size: 0.92rem; line-height: 1.8; color: #0f172a; }
+  .result-name { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 1rem; color: #2563eb; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid #bbf7d0; }
+  .result-text { white-space: pre-wrap; }
+  .error-box { display: none; width: 100%; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 14px; padding: 16px 20px; margin-bottom: 16px; font-size: 0.88rem; color: #be123c; text-align: center; }
+  .legal { text-align: center; font-size: 0.7rem; color: #475569; line-height: 1.9; margin-top: 8px; }
+  .legal a { color: #475569; text-decoration: none; }
+  .legal a:hover { color: #94a3b8; }
+</style>
+</head><body><main class="card">
+<div class="logo"><div class="logo-text">ai<span>Doctor</span></div></div>
+<h1>Бесплатный разбор <span class="accent">анализов</span></h1>
+<p class="subtitle">Сравни анализы за разные даты или задай один вопрос по нескольким бланкам. Все файлы одного человека в одном запросе считаются одним разбором.</p>
+<p class="subtitle" id="quota" aria-live="polite">5 бесплатных разборов в календарный месяц на один ID браузера.</p>
+<div id="personsContainer" style="width:100%"></div>
+<button class="btn-add-person" onclick="addPerson()">+ Добавить ещё одного человека</button>
+<button class="btn-analyze" id="analyzeBtn" onclick="analyzeAll()">Разобрать бесплатно</button>
+<div class="loading" id="loading" role="status">Разбираю результаты…</div>
+<div class="error-box" id="errorBox" role="alert"></div>
+<div id="resultsContainer" aria-live="polite" style="width:100%"></div>
+<p class="legal">aiDoctor — ИИ-ассистент. Не заменяет консультацию врача.<br>
+<a href="https://docs.google.com/document/d/1rYlkkBQAixizFWOqBXLV2jx2j5mQpEX45Rj9S8_GMwQ/edit">Политика конфиденциальности</a> · <a href="https://nigmatullin.pro/">Сайт врача</a></p>
+</main><script>
+const endpoint = '/aidoctor-api/analyze';
+let browserId;
+let personCount = 0;
+const personFiles = {};
+function stableId(storage, key) {
+  let id = storage.getItem(key);
+  if (!id) { id = crypto.randomUUID(); storage.setItem(key, id); }
+  return id;
+}
+function showQuota(data) {
+  document.getElementById('quota').textContent = 'Осталось разборов в этом месяце: ' + data.remaining + ' из ' + data.limit + '. Лимит обновится 1-го числа по времени Алматы.';
+}
+async function refreshQuota() {
+  const r = await fetch(endpoint, { headers: { 'X-Aidoctor-Id': browserId }, cache: 'no-store' });
+  if (r.ok) showQuota(await r.json());
+}
+  function addPerson() {
+    personCount++;
+    const id = personCount;
+    const container = document.getElementById('personsContainer');
+    const block = document.createElement('div');
+    block.className = 'person-block';
+    block.id = 'person_' + id;
+    block.innerHTML = `
+      <div class="person-header">
+        <div class="person-title">👤 Человек ${id}</div>
+        ${id > 1 ? `<button class="btn-remove-person" onclick="removePerson(${id})">✕ Удалить</button>` : ''}
+      </div>
+      <div class="person-fields">
+        <div><label class="field-label">Имя</label><input class="field-input" id="name_${id}" placeholder="Например: Мама" /></div>
+        <div><label class="field-label">Возраст</label><input class="field-input" id="age_${id}" placeholder="42" type="number" /></div>
+        <div><label class="field-label">Пол</label><select class="field-select" id="gender_${id}"><option value="">—</option><option value="женский">Женский</option><option value="мужской">Мужской</option></select></div>
+      </div>
+      <label class="files-label">Анализы (фото или PDF, можно несколько)</label>
+      <label class="file-drop" for="files_${id}"><div class="file-drop-text">📎 Выбрать файлы · всего до 4 МБ</div></label>
+      <input class="file-input" type="file" id="files_${id}" accept="image/jpeg,image/png,image/webp,image/gif,.pdf" multiple onchange="addFiles(${id})">
+      <div class="files-list" id="filesList_${id}"></div>
+      <label class="field-label" style="margin-top:12px">Вопрос по всем загруженным результатам</label>
+      <textarea class="symptoms-textarea" id="symptoms_${id}" rows="2" placeholder="Например, что изменилось по сравнению с прошлым анализом?"></textarea>
+    `;
+    block.dataset.thread = id === 1 ? stableId(sessionStorage, 'aidoctor_thread') : crypto.randomUUID();
+    block.addEventListener('input', () => { delete block.dataset.request; });
+    container.appendChild(block);
+  }
+
+  function removePerson(id) {
+    document.getElementById('person_' + id).remove();
+    delete personFiles[id];
+  }
+
+  function addFiles(personId) {
+    const input = document.getElementById('files_' + personId);
+    if (!personFiles[personId]) personFiles[personId] = [];
+    Array.from(input.files).forEach(file => personFiles[personId].push(file));
+    renderFilesList(personId);
+    input.value = '';
+  }
+
+  function removeFile(personId, index) {
+    delete document.getElementById('person_' + personId).dataset.request;
+    personFiles[personId].splice(index, 1);
+    renderFilesList(personId);
+  }
+
+  function toBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function showError(msg) {
+    const errorBox = document.getElementById('errorBox');
+    errorBox.style.display = 'block';
+    errorBox.textContent = msg;
+  }
+
+function renderFilesList(id) {
+  const list = document.getElementById('filesList_' + id);
+  list.replaceChildren();
+  personFiles[id].forEach((file, index) => {
+    const row = document.createElement('div');
+    row.className = 'file-item';
+    row.textContent = file.name;
+    const button = document.createElement('button');
+    button.className = 'file-item-remove';
+    button.textContent = 'Удалить';
+    button.onclick = () => removeFile(id, index);
+    row.append(button);
+    list.append(row);
+  });
+}
+function showResult(id, label, reply) {
+  let block = document.getElementById('result_' + id);
+  if (!block) {
+    block = document.createElement('section');
+    block.id = 'result_' + id;
+    block.className = 'result-block';
+    document.getElementById('resultsContainer').append(block);
+  }
+  const title = document.createElement('h2');
+  title.className = 'result-name';
+  title.textContent = label;
+  const body = document.createElement('p');
+  body.className = 'result-text';
+  const booking = /\[ЗАПИСЬ\]\s*$/.test(reply);
+  body.textContent = reply.replace(/\[ЗАПИСЬ\]\s*$/, '').trim();
+  block.replaceChildren(title, body);
+  if (booking) {
+    const link = document.createElement('a');
+    link.href = 'https://nigmatullin.pro/kontakty';
+    link.textContent = 'Записаться к Евгению на очный приём';
+    block.append(link);
+  }
+}
+async function analyzeAll() {
+  const button = document.getElementById('analyzeBtn');
+  if (button.disabled) return;
+  button.disabled = true;
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('errorBox').style.display = 'none';
+  try {
+    let sent = false;
+    for (const person of document.querySelectorAll('.person-block')) {
+      const id = person.id.slice('person_'.length);
+      const value = key => document.getElementById(key + '_' + id).value.trim();
+      const selected = personFiles[id] || [];
+      if (!selected.length && !value('symptoms')) continue;
+      if (selected.reduce((sum, file) => sum + file.size, 0) > 4 * 1024 * 1024) {
+        throw new Error('Для одного запроса выбери файлы общим размером до 4 МБ.');
+      }
+      sent = true;
+      const name = value('name'), age = value('age'), gender = value('gender'), symptoms = value('symptoms');
+      const request = person.dataset.request ||= crypto.randomUUID();
+      const files = await Promise.all(selected.map(async f => ({
+        data: await toBase64(f), mediaType: f.type || (/\.pdf$/i.test(f.name) ? 'application/pdf' : 'image/jpeg')
+      })));
+      const response = await fetch(endpoint, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Aidoctor-Id': browserId },
+        body: JSON.stringify({ name, age, gender, symptoms, files, session_id: person.dataset.thread, request_id: request }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Попробуй ещё раз.');
+      showQuota(data);
+      showResult(id, name || 'Разбор ' + id, data.result);
+    }
+    if (!sent) showError('Добавь файл или напиши вопрос.');
+  } catch (error) {
+    showError(error.message || 'Не удалось получить ответ. Повтори запрос.');
+    await refreshQuota().catch(() => {});
+  } finally {
+    button.disabled = false;
+    document.getElementById('loading').style.display = 'none';
+  }
+}
+async function init() {
+  try {
+    const getId = () => stableId(localStorage, 'aidoctor_browser_id');
+    browserId = navigator.locks ? await navigator.locks.request('aidoctor-id', getId) : getId();
+    addPerson();
+    await refreshQuota();
+  } catch {
+    showError('Для работы счётчика разреши хранение данных сайта и обнови страницу.');
+  }
+}
+init();
+</script></body></html>
