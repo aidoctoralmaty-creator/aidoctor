@@ -74,6 +74,13 @@
   .note textarea { display: block; width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #94a3b8; border-radius: 8px; font: inherit; }
   .note button[hidden] { display: none; }
   .note button { margin: 3px 8px 3px 0; }
+  .follow-up { margin: 16px 0 8px; }
+  .follow-up label { display: block; font-weight: 600; }
+  .follow-up textarea { display: block; width: 100%; margin: 6px 0; padding: 10px; border: 1px solid #94a3b8; border-radius: 8px; font: inherit; }
+  .follow-up button { padding: 8px 16px; border-radius: 8px; border: 0; color: white; background: #1d4ed8; font: inherit; cursor: pointer; }
+  .follow-up button:disabled { opacity: .6; }
+  .follow-up small { display: block; color: #475569; }
+  .patient-question { margin: 16px 0 6px; font-weight: 600; white-space: pre-wrap; }
 </style>
 </head><body><main class="card">
 <aside class="author" aria-label="Автор aiDoctor">
@@ -95,6 +102,14 @@
   <aside class="visit" aria-label="Консультация в Алматы">
     <strong></strong><p class="visit-terms"></p><p><a>Написать Евгению в WhatsApp</a></p>
   </aside>
+</template>
+<template id="followUpForm">
+  <form class="follow-up">
+    <label>Уточнить по этому разбору<textarea rows="2" required placeholder="Задайте вопрос или ответьте aiDoctor"></textarea></label>
+    <button type="submit">Отправить</button>
+    <small>Ответ расходует 1 из 5 разборов в месяц.</small>
+    <p role="status"></p>
+  </form>
 </template>
 <template id="doctorNote">
   <details class="note">
@@ -157,6 +172,7 @@ async function refreshQuota() {
 
   function removePerson(id) {
     document.getElementById('person_' + id).remove();
+    document.getElementById('result_' + id)?.remove();
     delete personFiles[id];
   }
 
@@ -233,7 +249,50 @@ function doctorNote(summary, visit) {
   }
   return note;
 }
-function showResult(id, label, answer, originalQuestion) {
+async function submitAnalysis(input) {
+  const response = await fetch(endpoint, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Aidoctor-Id': browserId },
+    body: JSON.stringify(input),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || 'Попробуй ещё раз.');
+  showQuota(data);
+  return data;
+}
+function followUp(block, context, parentRequest) {
+  const form = document.getElementById('followUpForm').content.firstElementChild.cloneNode(true);
+  const field = form.querySelector('textarea');
+  const button = form.querySelector('button');
+  const status = form.querySelector('[role="status"]');
+  let requestId;
+  field.oninput = () => { requestId = null; };
+  form.onsubmit = async event => {
+    event.preventDefault();
+    const question = field.value.trim();
+    if (!question || button.disabled) return;
+    button.disabled = true;
+    field.readOnly = true;
+    status.textContent = 'Готовлю ответ…';
+    requestId ||= crypto.randomUUID();
+    try {
+      const answer = await submitAnalysis({ ...context, symptoms: question, request_id: requestId, reply_to: parentRequest });
+      if (!form.isConnected) return;
+      const prompt = document.createElement('p');
+      prompt.className = 'patient-question';
+      prompt.textContent = 'Вы: ' + question;
+      block.querySelector('.response-actions').remove();
+      block.append(prompt);
+      appendAnswer(block, answer, question, context, requestId);
+    } catch (error) {
+      status.textContent = error.message || 'Не удалось отправить. Попробуйте ещё раз.';
+      button.disabled = false;
+      field.readOnly = false;
+    }
+  };
+  return form;
+}
+function showResult(id, label, answer, originalQuestion, context, requestId) {
+  if (!document.getElementById('person_' + id)) return;
   let block = document.getElementById('result_' + id);
   if (!block) {
     block = document.createElement('section');
@@ -241,22 +300,31 @@ function showResult(id, label, answer, originalQuestion) {
     block.className = 'result-block';
     document.getElementById('resultsContainer').append(block);
   }
+  if (block.dataset.initialRequest === requestId) return;
+  block.dataset.initialRequest = requestId;
   const title = document.createElement('h2');
   title.className = 'result-name';
   title.textContent = label;
+  block.replaceChildren(title);
+  appendAnswer(block, answer, originalQuestion, context, requestId);
+}
+function appendAnswer(block, answer, originalQuestion, context, requestId) {
   const body = document.createElement('p');
   body.className = 'result-text';
-  body.textContent = answer.result;
-  block.replaceChildren(title, body);
+  body.textContent = answer.result.replace(/^[ ]{0,3}#{1,6} +/gm, '').replace(/\*\*([^*]+)\*\*/g, '$1');
+  const actions = document.createElement('div');
+  actions.className = 'response-actions';
+  actions.append(followUp(block, context, requestId));
   const visit = Object.hasOwn(visits, answer.offer) ? visits[answer.offer] : null;
   if (visit) {
     const card = document.getElementById('visitOffer').content.cloneNode(true);
     card.querySelector('strong').textContent = visit.title + ' · Евгений Нигматуллин';
     card.querySelector('.visit-terms').textContent = visit.terms + ' · Алматы, ул. Кажымукана, 37';
     card.querySelector('a').href = bookingUrl(visit);
-    block.append(card);
+    actions.append(card);
   }
-  block.append(doctorNote(answer.summary || originalQuestion || '', visit));
+  actions.append(doctorNote(answer.summary || originalQuestion || '', visit));
+  block.append(body, actions);
 }
 async function analyzeAll() {
   const button = document.getElementById('analyzeBtn');
@@ -280,14 +348,9 @@ async function analyzeAll() {
       const files = await Promise.all(selected.map(async f => ({
         data: await toBase64(f), mediaType: f.type || (/\.pdf$/i.test(f.name) ? 'application/pdf' : 'image/jpeg')
       })));
-      const response = await fetch(endpoint, {
-        method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Aidoctor-Id': browserId },
-        body: JSON.stringify({ name, age, gender, symptoms, files, session_id: person.dataset.thread, request_id: request }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Попробуй ещё раз.');
-      showQuota(data);
-      showResult(id, name || 'Разбор ' + id, data, symptoms);
+      const context = { name, age, gender, session_id: person.dataset.thread };
+      const data = await submitAnalysis({ ...context, symptoms, files, request_id: request });
+      showResult(id, name || 'Разбор ' + id, data, symptoms, context, request);
     }
     if (!sent) showError('Добавь файл или напиши вопрос.');
   } catch (error) {
