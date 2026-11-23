@@ -13,20 +13,20 @@
 
 [[redirects]]
   from = "/"
-  to = "/free/"
+  to = "https://nigmatullin.pro/aidoctor/"
   status = 302
 
 [[redirects]]
   from = "/index.html"
-  to = "/free/"
+  to = "https://nigmatullin.pro/aidoctor/"
   status = 302
 
 [[redirects]]
   from = "/pro"
-  to = "/free/"
+  to = "https://nigmatullin.pro/aidoctor/"
   status = 302
 
 [[redirects]]
   from = "/pro.html"
-  to = "/free/"
+  to = "https://nigmatullin.pro/aidoctor/"
   status = 302
